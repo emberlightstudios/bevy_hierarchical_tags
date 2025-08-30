@@ -96,17 +96,14 @@ impl Tag {
         let len = self.len();
 
         if len >= TAG_SIZE {
-            return None; // cannot join more than 6
+            return None; 
         }
 
-        // Copy existing ids
         new_ids[..len].copy_from_slice(self.as_slice());
 
-        // Append new type
         new_ids[len] = TypeId::of::<T>();
         let new_len = len + 1;
 
-        // Return correct variant
         let result = match new_len {
             1 => Tag::Len1(TagArrayWrapper::new([new_ids[0]])),
             2 => Tag::Len2(TagArrayWrapper::new([new_ids[0], new_ids[1]])),
