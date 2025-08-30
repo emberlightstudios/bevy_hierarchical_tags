@@ -118,6 +118,26 @@ impl Tag {
 
         Some(result)
     }
+
+    pub fn parent(&self) -> Option<Tag> {
+        if self.len() == 1 {
+            None
+        } else {
+            let mut new_ids = [TypeId::of::<()>(); 6]; // max size
+            new_ids[..self.len()].copy_from_slice(&self.as_slice());
+            new_ids[self.len()] = TypeId::of::<()>();
+            let new_len = self.len() - 1;
+            let result = match new_len {
+                1 => Tag::Len1(TagArrayWrapper::new([new_ids[0]])),
+                2 => Tag::Len2(TagArrayWrapper::new([new_ids[0], new_ids[1]])),
+                3 => Tag::Len3(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2]])),
+                4 => Tag::Len4(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3]])),
+                5 => Tag::Len5(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3], new_ids[4]])),
+                _ => unreachable!(),
+            };
+            Some(result)
+        }
+    }
 }
 
 #[derive(Default, Clone)]

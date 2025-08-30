@@ -34,6 +34,11 @@ fn main() {
     assert!(!magic_tag.matches(&input_tag));
     assert!(!fireball_tag.matches(&lightning_tag));
 
+    // You can also join suffixes to a base tag to make a new tag
+    assert!(magic_tag.join::<Fireball>().unwrap() == fireball_tag);
+    // and you can truncate the leaf node to get the parent tag
+    assert!(fireball_tag.parent().unwrap() == magic_tag);
+
     // TagLists let you aggregate tags.
     let mut abilities = TagList::new();
     abilities.add_tag(&lightning_tag);
