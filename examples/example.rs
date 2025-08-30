@@ -1,4 +1,3 @@
-use std::any::TypeId;
 use hierarchical_tags::prelude::*;
 
 fn main() {

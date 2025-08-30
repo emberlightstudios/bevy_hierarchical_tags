@@ -117,7 +117,7 @@ impl Tag {
 }
 
 #[derive(Default, Clone)]
-pub struct TagList<const N: usize>(SmallVec<[Tag; N]>);
+pub struct TagList<const N: usize>(SmallVec<[Tag; 16]>);
 
 impl<const N: usize> TagList<N> {
     pub fn new() -> Self { Self::default() }
