@@ -2,6 +2,8 @@ mod tag_macro;
 use std::any::TypeId;
 use smallvec::SmallVec;
 
+const TAG_LIST_SIZE: usize = 16;
+
 pub mod prelude {
     pub use crate::{tag, TagList, Tag, TagArrayWrapper};
 }
@@ -14,11 +16,13 @@ impl<const N: usize> TagArrayWrapper<N> {
         Self(ids)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn matches<const M: usize>(&self, other: &TagArrayWrapper<M>) -> bool {
         if M > N { return false; }
         self.0[..M] == other.0[..M]
     }
 
+    #[allow(dead_code)]
     pub(crate) fn len(&self) -> usize { N }
 }
 
@@ -117,7 +121,7 @@ impl Tag {
 }
 
 #[derive(Default, Clone)]
-pub struct TagList<const N: usize>(SmallVec<[Tag; 16]>);
+pub struct TagList<const N: usize>(SmallVec<[Tag; TAG_LIST_SIZE]>);
 
 impl<const N: usize> TagList<N> {
     pub fn new() -> Self { Self::default() }
