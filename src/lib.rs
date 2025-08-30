@@ -121,9 +121,9 @@ impl Tag {
 }
 
 #[derive(Default, Clone)]
-pub struct TagList<const N: usize>(SmallVec<[Tag; TAG_LIST_SIZE]>);
+pub struct TagList(SmallVec<[Tag; TAG_LIST_SIZE]>);
 
-impl<const N: usize> TagList<N> {
+impl TagList {
     pub fn new() -> Self { Self::default() }
     
     pub fn has_tag(&self, tag: &Tag) -> bool {
@@ -182,7 +182,7 @@ mod tests {
         assert_eq!(tag2.len(), 2);
         assert_eq!(tag3.len(), 3);
 
-        let mut tags = TagList::<2>::new();
+        let mut tags = TagList::new();
         tags.add_tag(&tag!(Input));
         tags.add_tag(&tag!(Fire));
         assert!(!tags.any_matches(&tag!(Magic)));
