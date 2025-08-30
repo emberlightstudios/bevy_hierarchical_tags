@@ -2,7 +2,8 @@ mod tag_macro;
 use std::any::TypeId;
 use smallvec::SmallVec;
 
-const TAG_LIST_SIZE: usize = 16;
+const TAG_LIST_SIZE: usize = 4;
+const TAG_SIZE: usize = 4;
 
 pub mod prelude {
     pub use crate::{tag, TagList, Tag, TagArrayWrapper};
@@ -33,8 +34,8 @@ pub enum Tag {
     Len2(TagArrayWrapper<2>),
     Len3(TagArrayWrapper<3>),
     Len4(TagArrayWrapper<4>),
-    Len5(TagArrayWrapper<5>),
-    Len6(TagArrayWrapper<6>),
+    //Len5(TagArrayWrapper<5>),
+    //Len6(TagArrayWrapper<6>),
 }
 
 
@@ -58,16 +59,16 @@ impl From<TagArrayWrapper<4>> for Tag {
         Tag::Len4(value)
     }
 }
-impl From<TagArrayWrapper<5>> for Tag {
-    fn from(value: TagArrayWrapper<5>) -> Self {
-        Tag::Len5(value)
-    }
-}
-impl From<TagArrayWrapper<6>> for Tag {
-    fn from(value: TagArrayWrapper<6>) -> Self {
-        Tag::Len6(value)
-    }
-}
+//impl From<TagArrayWrapper<5>> for Tag {
+//    fn from(value: TagArrayWrapper<5>) -> Self {
+//        Tag::Len5(value)
+//    }
+//}
+//impl From<TagArrayWrapper<6>> for Tag {
+//    fn from(value: TagArrayWrapper<6>) -> Self {
+//        Tag::Len6(value)
+//    }
+//}
 
 impl Tag {
     fn as_slice(&self) -> &[TypeId] {
@@ -76,8 +77,8 @@ impl Tag {
             Tag::Len2(tag) => &tag.0,
             Tag::Len3(tag) => &tag.0,
             Tag::Len4(tag) => &tag.0,
-            Tag::Len5(tag) => &tag.0,
-            Tag::Len6(tag) => &tag.0,
+            //Tag::Len5(tag) => &tag.0,
+            //Tag::Len6(tag) => &tag.0,
         }
     }
 
@@ -91,10 +92,10 @@ impl Tag {
     pub fn len(&self) -> usize { self.as_slice().len() }
 
     pub fn join<T: 'static>(&self) -> Option<Tag> {
-        let mut new_ids = [TypeId::of::<()>(); 6]; // max size
+        let mut new_ids = [TypeId::of::<()>(); TAG_SIZE];
         let len = self.len();
 
-        if len >= 6 {
+        if len >= TAG_SIZE {
             return None; // cannot join more than 6
         }
 
@@ -111,8 +112,8 @@ impl Tag {
             2 => Tag::Len2(TagArrayWrapper::new([new_ids[0], new_ids[1]])),
             3 => Tag::Len3(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2]])),
             4 => Tag::Len4(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3]])),
-            5 => Tag::Len5(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3], new_ids[4]])),
-            6 => Tag::Len6(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3], new_ids[4], new_ids[5]])),
+            //5 => Tag::Len5(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3], new_ids[4]])),
+            //6 => Tag::Len6(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3], new_ids[4], new_ids[5]])),
             _ => unreachable!(),
         };
 
@@ -123,7 +124,7 @@ impl Tag {
         if self.len() == 1 {
             None
         } else {
-            let mut new_ids = [TypeId::of::<()>(); 6]; // max size
+            let mut new_ids = [TypeId::of::<()>(); TAG_SIZE];
             new_ids[..self.len()].copy_from_slice(&self.as_slice());
             new_ids[self.len()] = TypeId::of::<()>();
             let new_len = self.len() - 1;
@@ -131,8 +132,8 @@ impl Tag {
                 1 => Tag::Len1(TagArrayWrapper::new([new_ids[0]])),
                 2 => Tag::Len2(TagArrayWrapper::new([new_ids[0], new_ids[1]])),
                 3 => Tag::Len3(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2]])),
-                4 => Tag::Len4(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3]])),
-                5 => Tag::Len5(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3], new_ids[4]])),
+                //4 => Tag::Len4(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3]])),
+                //5 => Tag::Len5(TagArrayWrapper::new([new_ids[0], new_ids[1], new_ids[2], new_ids[3], new_ids[4]])),
                 _ => unreachable!(),
             };
             Some(result)
