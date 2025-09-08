@@ -73,11 +73,11 @@ impl TagRegistry {
 
             // Build ancestor mask
             let mut ancestors = if let Some(p) = parent {
-                self.nodes[p.0 as usize].ancestors.clone()
+                self.nodes[*p as usize].ancestors.clone()
             } else {
                 bitvec![0; self.max_tags]
             };
-            ancestors.set(id.0 as usize, true);
+            ancestors.set(*id as usize, true);
 
             let node = TagNode { ancestors };
             self.nodes.push(node);
@@ -95,7 +95,7 @@ impl TagRegistry {
 
     /// Check if descendant has ancestor in its ancestor mask
     pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
-        self.nodes[descendant.0 as usize].ancestors[ancestor.0 as usize]
+        self.nodes[*descendant as usize].ancestors[*ancestor as usize]
     }
 }
 
