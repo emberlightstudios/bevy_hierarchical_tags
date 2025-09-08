@@ -1,69 +1,42 @@
-use hierarchical_tags::prelude::*;
+use bevy::prelude::*;
+use bevy_hierarchical_tags::prelude::*;
+
+#[derive(Resource)]
+struct MyTagIds {
+    fireball: TagId,
+    lightning: TagId,
+    attack: TagId,
+}
 
 fn main() {
-    struct Input;
-    struct Attack;
+    let mut app = App::new();
+    let mut registry = TagRegistry::default();
+    app.add_systems(Startup, test);
 
-    struct Ability;
-    struct Magic;
-    struct Fireball;
-    struct Lightning;
+    let fireball = registry.register("Ability.Magic.Fireball");
+    let lightning = registry.register("Ability.Magic.Lightning");
+    let attack = registry.register("Input.Attack");
 
-    // Tags are hierarchical, you can have up to 6 levels
-    let input_tag = tag!(Input);
-    let attack_tag = tag!(Input, Attack);
+    app.insert_resource(registry);
+    app.insert_resource(MyTagIds {
+        fireball, lightning, attack
+    });
+    app.run();
+}
 
-    let ability_tag = tag!(Ability);
-    let fireball_tag = tag!(Ability, Magic, Fireball);
-    let lightning_tag = tag!(Ability, Magic, Lightning);
+fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
+    // This method should be used sparingly since hashing strings isn't exactly the cheapest. 
+    // Ideally all needed tag ids would be stored in a resource somewhere
+    // This is just for testing
+    let magic = registry.id_of("Ability.Magic").unwrap();
+    let abilities = registry.id_of("Ability").unwrap();
 
-    // This is a parent of the fireball and lightning tags
-    // It has the first 2 levels in common.
-    let magic_tag = tag!(Ability, Magic);
+    assert!(registry.matches(tags.fireball, magic));
+    assert!(registry.matches(tags.lightning, magic));
+    assert!(registry.matches(tags.fireball, abilities));
+    assert!(registry.matches(tags.lightning, abilities));
+    assert!(!registry.matches(tags.lightning, tags.fireball));
+    assert!(!registry.matches(tags.lightning, tags.attack));
 
-    
-    // tags match on themselves, obviously
-    assert!(lightning_tag.matches(&lightning_tag));
-    // or up through their parents
-    assert!(attack_tag.matches(&input_tag));
-    assert!(lightning_tag.matches(&magic_tag));
-    assert!(fireball_tag.matches(&magic_tag));
-    assert!(fireball_tag.matches(&ability_tag));
-
-    // but they won't match anything else, including siblings
-    assert!(!magic_tag.matches(&input_tag));
-    assert!(!fireball_tag.matches(&lightning_tag));
-
-    // You can also join suffixes to a base tag to make a new tag
-    assert!(magic_tag.join::<Fireball>().unwrap() == fireball_tag);
-    // and you can truncate the leaf node to get the parent tag
-    assert!(fireball_tag.parent().unwrap() == magic_tag);
-
-    // TagLists let you aggregate tags.
-    let mut abilities = TagList::new();
-    abilities.add_tag(&lightning_tag);
-    abilities.add_tag(&fireball_tag);
-
-    // check if we have at least 1 magic tag
-    assert!(abilities.any_matches(&magic_tag));
-    // but we shouldn't have any input tags
-    assert!(!abilities.any_matches(&input_tag));
-
-    // You can check existence per tag
-    assert!(abilities.has_tag(&lightning_tag));
-    assert!(abilities.has_tag(&fireball_tag));
-    
-    // and iterate
-    for tag in abilities.iter() {
-        println!("{}", tag.matches(&fireball_tag));
-    }
-
-    // and remove tags
-    abilities.remove_tag(&lightning_tag);
-    abilities.remove_tag(&fireball_tag);
-
-    // Now we have no more magic tags
-    assert!(!abilities.any_matches(&magic_tag));
-    // or any tags at all
-    assert_eq!(abilities.len(), 0);
+    println!("SUCCESS");
 }
