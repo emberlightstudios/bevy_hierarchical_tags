@@ -4,15 +4,7 @@ use smallvec::SmallVec;
 use std::collections::HashMap;
 
 pub mod prelude {
-    pub use crate::{TagPlugin, TagRegistry, TagId, TagList};
-}
-
-pub struct TagPlugin;
-
-impl Plugin for TagPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(TagRegistry::default());
-    }
+    pub use crate::{TagRegistry, TagId, TagList};
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Deref)]
