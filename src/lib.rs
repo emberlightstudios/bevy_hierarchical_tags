@@ -59,7 +59,7 @@ impl<const INLINE_NODES: usize> TagRegistry<INLINE_NODES> {
             }
 
             if self.len >= INLINE_NODES {
-                panic!("Cannot add more tags. Increase INLINE_NODES generic parameter to TagRegistry.");
+                panic!("⚠️ ⚠️ ⚠️   Cannot add more tags. Increase INLINE_NODES generic parameter to TagRegistry. ⚠️ ⚠️ ⚠️ ");
             }
 
             let id = TagId(self.len as u16);
