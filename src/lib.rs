@@ -82,8 +82,11 @@ pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
 
 impl<const N: usize> TagList<N> {
     pub fn any_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
-        self.iter()
-            .any(|existing| registry.matches(*existing, tag))
+        self.iter().any(|existing| registry.matches(*existing, tag))
+    }
+
+    pub fn no_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
+        !self.iter().any(|existing| registry.matches(*existing, tag))
     }
 
     pub fn all_matches<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
