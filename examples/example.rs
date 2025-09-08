@@ -10,11 +10,16 @@ struct MyTagIds {
 
 fn main() {
     let mut app = App::new();
-    let mut registry = TagRegistry::default();
+    // Need to be careful with max_tags parameter.  You can always go higher than you need
+    // but it costs speed and ram. 
+    let mut registry = TagRegistry::new(6);
     app.add_systems(Startup, test);
 
+    // This adds not 1 tag, but 3 (Ability, Ability.Magic, Ability.Magic.Fireball)
     let fireball = registry.register("Ability.Magic.Fireball");
+    // This only adds 1 because the root already exists
     let lightning = registry.register("Ability.Magic.Lightning");
+    // This adds 2
     let attack = registry.register("Input.Attack");
 
     app.insert_resource(registry);

@@ -1,29 +1,49 @@
 use bevy::prelude::*;
-use smallbitvec::SmallBitVec;
+use bitvec::prelude::*;
 use smallvec::SmallVec;
 use std::collections::HashMap;
 
-const N_TAGS: usize = 128;
+/// This can be tuned to increase performance
+/// If it's larger than the number of tags you avoid
+/// heap allocations.  If it's smaller then you waste ram.
+/// Ideally it's equal or only slightly larger than max_tags,
+/// but it needs to be known at compile time.
+const INLINE_NODES: usize = 128;
 
+/// Module prelude
 pub mod prelude {
     pub use crate::{TagRegistry, TagId, TagList};
 }
 
+/// Tag identifier
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Deref)]
 pub struct TagId(pub u16);
 
+/// Node representing a tag and its ancestors
 pub struct TagNode {
-    /// Bitmask of all ancestors (including itself)
-    ancestors: SmallBitVec,
+    /// Ancestor mask (includes self)
+    ancestors: BitVec,
 }
 
-#[derive(Resource, Default)]
+/// Tag registry resource 
+#[derive(Resource)]
 pub struct TagRegistry {
-    nodes: Vec<TagNode>,
+    nodes: SmallVec<[TagNode; INLINE_NODES]>, 
     lookup: HashMap<String, TagId>,
+    max_tags: usize,
 }
 
 impl TagRegistry {
+    /// Create a new registry with a specified max number of tags
+    pub fn new(max_tags: usize) -> Self {
+        Self {
+            nodes: SmallVec::new(),
+            lookup: HashMap::new(),
+            max_tags,
+        }
+    }
+
+    /// Register a tag by its path (e.g., "Ability.Magic.Fireball")
     pub fn register(&mut self, path: impl AsRef<str>) -> TagId {
         let path = path.as_ref();
         if let Some(&id) = self.lookup.get(path) {
@@ -46,19 +66,25 @@ impl TagRegistry {
                 continue;
             }
 
-            // assign new id
             let id = TagId(self.nodes.len() as u16);
-
-            // build ancestor mask
-            let mut ancestors: SmallBitVec;
-            if let Some(p) = parent {
-                ancestors = self.nodes[p.0 as usize].ancestors.clone();
-            } else {
-                ancestors = SmallBitVec::from_elem(N_TAGS, false);
+            if *id > self.max_tags as u16 {
+                panic!("Cannot add more tags.  Increase max_tags parameter for TagRegistry");
             }
-            ancestors.set(id.0 as usize, true); // mark itself
 
-            self.nodes.push(TagNode { ancestors });
+            // Build ancestor mask
+            let mut ancestors = if let Some(p) = parent {
+                self.nodes[p.0 as usize].ancestors.clone()
+            } else {
+                bitvec![0; self.max_tags]
+            };
+            ancestors.set(id.0 as usize, true);
+
+            // Create node
+            let node = TagNode {
+                ancestors,
+            };
+
+            self.nodes.push(node);
             self.lookup.insert(current_path.clone(), id);
             parent = Some(id);
         }
@@ -66,12 +92,19 @@ impl TagRegistry {
         parent.unwrap()
     }
 
+    /// Get the TagId for a given path
     pub fn id_of(&self, tag: impl AsRef<str>) -> Option<TagId> {
         self.lookup.get(&tag.as_ref().to_lowercase()).copied()
     }
 
+    /// Check if descendant has ancestor in its ancestor mask
     pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
         self.nodes[descendant.0 as usize].ancestors[ancestor.0 as usize]
+    }
+
+    /// Maximum number of tags
+    pub fn max_tags(&self) -> usize {
+        self.max_tags
     }
 }
 
