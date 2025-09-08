@@ -19,13 +19,15 @@ pub struct TagNode {
 
 /// Tag registry with a fixed inline array
 #[derive(Resource)]
-pub struct TagRegistry<const INLINE_NODES: usize> {
-    nodes: [Option<TagNode>; INLINE_NODES],
+pub struct TagRegistry<const TAGMAX: usize> {
+    nodes: [Option<TagNode>; TAGMAX],
     lookup: HashMap<String, TagId>,
     len: usize, // number of tags currently registered
 }
 
-impl<const INLINE_NODES: usize> TagRegistry<INLINE_NODES> {
+impl<const TAGMAX: usize> TagRegistry<TAGMAX> {
+    pub const MAX_TAGS: usize = TAGMAX;
+
     /// Create a new empty registry
     pub fn new() -> Self {
         Self {
@@ -58,8 +60,8 @@ impl<const INLINE_NODES: usize> TagRegistry<INLINE_NODES> {
                 continue;
             }
 
-            if self.len >= INLINE_NODES {
-                panic!("⚠️ ⚠️ ⚠️   Cannot add more tags. Increase INLINE_NODES generic parameter to TagRegistry. ⚠️ ⚠️ ⚠️ ");
+            if self.len >= TAGMAX {
+                panic!("⚠️ ⚠️ ⚠️   Cannot add more tags. Increase TAGMAX generic parameter to TagRegistry. ⚠️ ⚠️ ⚠️ ");
             }
 
             let id = TagId(self.len as u16);
@@ -68,7 +70,7 @@ impl<const INLINE_NODES: usize> TagRegistry<INLINE_NODES> {
             let mut ancestors = if let Some(p) = parent {
                 self.nodes[*p as usize].as_ref().unwrap().ancestors.clone()
             } else {
-                bitvec![0; INLINE_NODES]
+                bitvec![0; TAGMAX]
             };
             ancestors.set(*id as usize, true);
 
