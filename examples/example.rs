@@ -47,10 +47,14 @@ fn test(registry: Res<MyTagRegistry>, tags: Res<MyTagIds>) {
     let magic_tags: TagList<2> = TagList::from([magic]);
     let input_tags: TagList<2> = TagList::from([tags.attack]);
 
+    // Check list against single tag
     assert!(abilities_taglist.any_match(magic, &registry));
-    assert!(abilities_taglist.all_match_from(&magic_tags, &registry));
     assert!(abilities_taglist.none_match(tags.attack, &registry));
+
+    // Check list against another tag list
     assert!(abilities_taglist.none_match_from(&input_tags, &registry));
+    assert!(abilities_taglist.all_match_from(&magic_tags, &registry));
+    assert!(abilities_taglist.any_match_from(&magic_tags, &registry));
 
     println!("SUCCESS");
 }

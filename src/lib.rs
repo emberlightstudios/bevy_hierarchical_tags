@@ -108,6 +108,10 @@ impl<const N: usize> TagList<N> {
         !self.any_match(tag, registry)
     }
 
+    pub fn any_match_from<const R: usize, const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry<R>) -> bool {
+        tags.iter().any(|tag| self.any_match(*tag, registry))
+    }
+
     pub fn none_match_from<const R: usize, const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry<R>) -> bool {
         tags.iter().all(|tag| !self.any_match(*tag, registry))
     }
