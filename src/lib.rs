@@ -48,16 +48,13 @@ impl TagRegistry {
             let id = TagId(self.nodes.len() as u16);
 
             // build ancestor mask
-            let mut ancestors = SmallBitVec::from_elem(1024, false);
-            ancestors.set(id.0 as usize, true); // mark itself
+            let mut ancestors: SmallBitVec;
             if let Some(p) = parent {
-                let parent_anc = &self.nodes[p.0 as usize].ancestors;
-                for (i, bit) in parent_anc.iter().enumerate() {
-                    if bit {
-                        ancestors.set(i, true);
-                    }
-                }
+                ancestors = self.nodes[p.0 as usize].ancestors.clone();
+            } else {
+                ancestors = SmallBitVec::from_elem(1024, false);
             }
+            ancestors.set(id.0 as usize, true); // mark itself
 
             self.nodes.push(TagNode { ancestors });
             self.lookup.insert(current_path.clone(), id);
