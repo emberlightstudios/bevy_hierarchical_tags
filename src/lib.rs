@@ -3,16 +3,8 @@ use bitvec::prelude::*;
 use smallvec::SmallVec;
 use std::collections::HashMap;
 
-/// This can be tuned to increase performance
-/// If it's larger than the number of tags you avoid
-/// heap allocations.  If it's smaller then you waste ram.
-/// Ideally it's equal or only slightly larger than max_tags,
-/// but it needs to be known at compile time.
-const INLINE_NODES: usize = 128;
-
-/// Module prelude
 pub mod prelude {
-    pub use crate::{TagRegistry, TagId, TagList};
+    pub use crate::{TagId, TagRegistry, TagList};
 }
 
 /// Tag identifier
@@ -20,30 +12,30 @@ pub mod prelude {
 pub struct TagId(pub u16);
 
 /// Node representing a tag and its ancestors
+#[derive(Clone)]
 pub struct TagNode {
-    /// Ancestor mask (includes self)
     ancestors: BitVec,
 }
 
-/// Tag registry resource 
+/// Tag registry with a fixed inline array
 #[derive(Resource)]
-pub struct TagRegistry {
-    nodes: SmallVec<[TagNode; INLINE_NODES]>, 
+pub struct TagRegistry<const INLINE_NODES: usize> {
+    nodes: [Option<TagNode>; INLINE_NODES],
     lookup: HashMap<String, TagId>,
-    max_tags: usize,
+    len: usize, // number of tags currently registered
 }
 
-impl TagRegistry {
-    /// Create a new registry with a specified max number of tags
-    pub fn new(max_tags: usize) -> Self {
+impl<const INLINE_NODES: usize> TagRegistry<INLINE_NODES> {
+    /// Create a new empty registry
+    pub fn new() -> Self {
         Self {
-            nodes: SmallVec::new(),
+            nodes: std::array::from_fn(|_| None),
             lookup: HashMap::new(),
-            max_tags,
+            len: 0,
         }
     }
 
-    /// Register a tag by its path (e.g., "Ability.Magic.Fireball")
+    /// Register a tag by path (e.g., "Ability.Magic.Fireball")
     pub fn register(&mut self, path: impl AsRef<str>) -> TagId {
         let path = path.as_ref();
         if let Some(&id) = self.lookup.get(path) {
@@ -66,36 +58,40 @@ impl TagRegistry {
                 continue;
             }
 
-            let id = TagId(self.nodes.len() as u16);
-            if *id >= self.max_tags as u16 {
-                panic!("Cannot add more tags.  Increase max_tags parameter for TagRegistry");
+            if self.len >= INLINE_NODES {
+                panic!("Cannot add more tags. Increase INLINE_NODES generic parameter to TagRegistry.");
             }
+
+            let id = TagId(self.len as u16);
 
             // Build ancestor mask
             let mut ancestors = if let Some(p) = parent {
-                self.nodes[*p as usize].ancestors.clone()
+                self.nodes[p.0 as usize].as_ref().unwrap().ancestors.clone()
             } else {
-                bitvec![0; self.max_tags]
+                bitvec![0; INLINE_NODES]
             };
-            ancestors.set(*id as usize, true);
+            ancestors.set(id.0 as usize, true);
 
-            let node = TagNode { ancestors };
-            self.nodes.push(node);
+            self.nodes[self.len] = Some(TagNode { ancestors });
             self.lookup.insert(current_path.clone(), id);
+            self.len += 1;
             parent = Some(id);
         }
 
         parent.unwrap()
     }
 
-    /// Get the TagId for a given path
+    /// Get TagId by path
     pub fn id_of(&self, tag: impl AsRef<str>) -> Option<TagId> {
         self.lookup.get(&tag.as_ref().to_lowercase()).copied()
     }
 
     /// Check if descendant has ancestor in its ancestor mask
     pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
-        self.nodes[*descendant as usize].ancestors[*ancestor as usize]
+        self.nodes[descendant.0 as usize]
+            .as_ref()
+            .unwrap()
+            .ancestors[ancestor.0 as usize]
     }
 }
 
@@ -104,19 +100,19 @@ impl TagRegistry {
 pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
 
 impl<const N: usize> TagList<N> {
-    pub fn any_match(&self, tag: TagId, registry: &TagRegistry) -> bool {
+    pub fn any_match<const R: usize>(&self, tag: TagId, registry: &TagRegistry<R>) -> bool {
         self.iter().any(|existing| registry.is_match(*existing, tag))
     }
 
-    pub fn none_match(&self, tag: TagId, registry: &TagRegistry) -> bool {
+    pub fn none_match<const R: usize>(&self, tag: TagId, registry: &TagRegistry<R>) -> bool {
         !self.iter().any(|existing| registry.is_match(*existing, tag))
     }
 
-    pub fn none_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+    pub fn none_match_from<const R: usize, const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry<R>) -> bool {
         tags.iter().all(|tag| !self.any_match(*tag, registry))
     }
 
-    pub fn all_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+    pub fn all_match_from<const R: usize, const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry<R>) -> bool {
         tags.iter().all(|tag| self.any_match(*tag, registry))
     }
 }

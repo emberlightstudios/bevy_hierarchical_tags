@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_hierarchical_tags::prelude::*;
+use bevy_hierarchical_tags::{prelude::*, TagRegistry};
 
 #[derive(Resource)]
 struct MyTagIds {
@@ -8,11 +8,14 @@ struct MyTagIds {
     attack: TagId,
 }
 
+// We do this so we don't have to propagate the generic to every system
+type MyTagRegistry = TagRegistry<6>;
+
 fn main() {
     let mut app = App::new();
     // Need to be careful with max_tags parameter.  You can always go higher than you need
     // but it will cost some speed and ram. 
-    let mut registry = TagRegistry::new(6);
+    let mut registry = MyTagRegistry::new();
     app.add_systems(Startup, test);
 
     // This adds not 1 tag, but 3 (Ability, Ability.Magic, Ability.Magic.Fireball)
@@ -27,7 +30,7 @@ fn main() {
     app.run();
 }
 
-fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
+fn test(registry: Res<MyTagRegistry>, tags: Res<MyTagIds>) {
     // This method should be used sparingly since hashing strings isn't exactly the cheapest. 
     // Ideally all needed tag ids would be stored in a resource somewhere
     // This is just for testing
