@@ -44,14 +44,15 @@ fn test(registry: Res<MyTagRegistry>, tags: Res<MyTagIds>) {
 
     // 2 slots wil be allocated inline.  Any extras go on the heap.
     let abilities_taglist: TagList<2> = TagList::from([tags.fireball, tags.lightning]);
-    let magic_tags: TagList<2> = TagList::from([magic]);
-    let input_tags: TagList<2> = TagList::from([tags.attack]);
 
     // Check list against single tag
     assert!(abilities_taglist.any_match(magic, &registry));
     assert!(abilities_taglist.none_match(tags.attack, &registry));
 
     // Check list against another tag list
+    let magic_tags: TagList<2> = TagList::from([magic]);
+    let input_tags: TagList<2> = TagList::from([tags.attack]);
+
     assert!(abilities_taglist.none_match_from(&input_tags, &registry));
     assert!(abilities_taglist.all_match_from(&magic_tags, &registry));
     assert!(abilities_taglist.any_match_from(&magic_tags, &registry));
