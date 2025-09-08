@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use smallvec::SmallVec;
 use std::collections::HashMap;
 
 
@@ -6,7 +7,8 @@ pub mod prelude {
     pub use crate::{
         TagPlugin,
         TagRegistry,
-        TagId
+        TagId,
+        TagList,
     };
 }
 
@@ -76,14 +78,43 @@ impl TagRegistry {
         self.lookup.get(&tag.to_lowercase()).copied()
     }
 
-    pub fn matches(&self, a: TagId, b: TagId) -> bool {
-        let mut current = Some(a);
+    pub fn matches(&self, descendent: TagId, ancestor: TagId) -> bool {
+        let mut current = Some(descendent);
         while let Some(id) = current {
-            if id == b {
+            if id == ancestor {
                 return true;
             }
             current = self.nodes[id.0 as usize].parent;
         }
         false
+    }
+}
+
+/// Generic over inline stack size for smallvec.  You can exceed this, but it will
+/// involve heap allocations.  Try to match with the number of tags you would 
+/// expect for your use case.
+#[derive(Deref, DerefMut, Default, Clone)]
+pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
+
+#[allow(dead_code)]
+impl<const N: usize> TagList<N> {
+    pub fn any_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
+        self.iter().any(|existing| registry.matches(*existing, tag))
+    }
+
+    pub fn all_matches<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+        tags.iter().all(|tag| self.any_matches(*tag, registry))
+    }
+
+    pub fn from_slice(slice: &[TagId]) -> Self {
+        let mut list = SmallVec::new();
+        list.extend_from_slice(slice);
+        TagList(list)
+    }
+
+    pub fn from_iter<I: IntoIterator<Item = TagId>>(iter: I) -> Self {
+        let mut list = SmallVec::new();
+        list.extend(iter);
+        TagList(list)
     }
 }

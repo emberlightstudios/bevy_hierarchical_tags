@@ -38,5 +38,11 @@ fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
     assert!(!registry.matches(tags.lightning, tags.fireball));
     assert!(!registry.matches(tags.lightning, tags.attack));
 
+    let abilities = TagList::<2>::from_slice(&[tags.fireball, tags.lightning]);
+
+    assert!(abilities.any_matches(magic, &registry));
+    assert!(abilities.all_matches(&abilities, &registry));
+    assert!(!abilities.any_matches(tags.attack, &registry));
+
     println!("SUCCESS");
 }
