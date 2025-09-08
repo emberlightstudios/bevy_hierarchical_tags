@@ -38,10 +38,11 @@ fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
     assert!(!registry.is_match(tags.lightning, tags.fireball));
     assert!(!registry.is_match(tags.lightning, tags.attack));
 
-    let abilities = TagList::<2>::from_slice(&[tags.fireball, tags.lightning]);
+    let abilities: TagList<2> = TagList::from([tags.fireball, tags.lightning]);
+    let magic_tags: TagList<1> = TagList::from([magic]);
 
     assert!(abilities.any_match(magic, &registry));
-    assert!(abilities.all_match(&abilities, &registry));
+    assert!(abilities.all_match(&magic_tags, &registry));
     assert!(abilities.none_match(tags.attack, &registry));
 
     println!("SUCCESS");

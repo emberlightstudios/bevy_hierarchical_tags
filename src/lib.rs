@@ -89,14 +89,10 @@ impl<const N: usize> TagList<N> {
     pub fn all_match<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
         tags.iter().all(|tag| self.any_match(*tag, registry))
     }
+}
 
-    pub fn from_slice(slice: &[TagId]) -> Self {
-        let mut list = SmallVec::new();
-        list.extend_from_slice(slice);
-        TagList(list)
-    }
-
-    pub fn from_iter<I: IntoIterator<Item = TagId>>(iter: I) -> Self {
+impl<const N: usize, I: IntoIterator<Item = TagId>> From<I> for TagList<N> {
+    fn from(iter: I) -> Self {
         let mut list = SmallVec::new();
         list.extend(iter);
         TagList(list)
