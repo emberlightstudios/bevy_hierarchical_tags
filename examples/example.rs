@@ -11,7 +11,7 @@ struct MyTagIds {
 fn main() {
     let mut app = App::new();
     // Need to be careful with max_tags parameter.  You can always go higher than you need
-    // but it costs speed and ram. 
+    // but it will cost some speed and ram. 
     let mut registry = TagRegistry::new(6);
     app.add_systems(Startup, test);
 
