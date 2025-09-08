@@ -82,7 +82,7 @@ impl<const N: usize> TagList<N> {
         self.iter().any(|existing| registry.matches(*existing, tag))
     }
 
-    pub fn no_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
+    pub fn none_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
         !self.iter().any(|existing| registry.matches(*existing, tag))
     }
 
