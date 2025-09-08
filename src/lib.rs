@@ -3,6 +3,8 @@ use smallbitvec::SmallBitVec;
 use smallvec::SmallVec;
 use std::collections::HashMap;
 
+const N_TAGS: usize = 128;
+
 pub mod prelude {
     pub use crate::{TagRegistry, TagId, TagList};
 }
@@ -52,7 +54,7 @@ impl TagRegistry {
             if let Some(p) = parent {
                 ancestors = self.nodes[p.0 as usize].ancestors.clone();
             } else {
-                ancestors = SmallBitVec::from_elem(1024, false);
+                ancestors = SmallBitVec::from_elem(N_TAGS, false);
             }
             ancestors.set(id.0 as usize, true); // mark itself
 

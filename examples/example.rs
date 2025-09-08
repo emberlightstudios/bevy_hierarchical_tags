@@ -39,7 +39,7 @@ fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
     assert!(!registry.is_match(tags.lightning, tags.attack));
 
     let abilities: TagList<2> = TagList::from([tags.fireball, tags.lightning]);
-    let magic_tags: TagList<1> = TagList::from([magic]);
+    let magic_tags: TagList<2> = TagList::from([magic]);
     let input_tags: TagList<2> = TagList::from([tags.attack]);
 
     assert!(abilities.any_match(magic, &registry));
