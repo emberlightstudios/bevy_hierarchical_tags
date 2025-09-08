@@ -13,8 +13,6 @@ type MyTagRegistry = TagRegistry<6>;
 
 fn main() {
     let mut app = App::new();
-    // Need to be careful with max_tags parameter.  You can always go higher than you need
-    // but it will cost some speed and ram. 
     let mut registry = MyTagRegistry::new();
     app.add_systems(Startup, test);
 
