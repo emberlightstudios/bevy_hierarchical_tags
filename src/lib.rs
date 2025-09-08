@@ -79,11 +79,7 @@ impl TagRegistry {
             };
             ancestors.set(id.0 as usize, true);
 
-            // Create node
-            let node = TagNode {
-                ancestors,
-            };
-
+            let node = TagNode { ancestors };
             self.nodes.push(node);
             self.lookup.insert(current_path.clone(), id);
             parent = Some(id);
@@ -100,11 +96,6 @@ impl TagRegistry {
     /// Check if descendant has ancestor in its ancestor mask
     pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
         self.nodes[descendant.0 as usize].ancestors[ancestor.0 as usize]
-    }
-
-    /// Maximum number of tags
-    pub fn max_tags(&self) -> usize {
-        self.max_tags
     }
 }
 
