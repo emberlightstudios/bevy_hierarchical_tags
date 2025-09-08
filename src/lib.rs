@@ -66,11 +66,11 @@ impl<const INLINE_NODES: usize> TagRegistry<INLINE_NODES> {
 
             // Build ancestor mask
             let mut ancestors = if let Some(p) = parent {
-                self.nodes[p.0 as usize].as_ref().unwrap().ancestors.clone()
+                self.nodes[*p as usize].as_ref().unwrap().ancestors.clone()
             } else {
                 bitvec![0; INLINE_NODES]
             };
-            ancestors.set(id.0 as usize, true);
+            ancestors.set(*id as usize, true);
 
             self.nodes[self.len] = Some(TagNode { ancestors });
             self.lookup.insert(current_path.clone(), id);
@@ -88,15 +88,15 @@ impl<const INLINE_NODES: usize> TagRegistry<INLINE_NODES> {
 
     /// Check if descendant has ancestor in its ancestor mask
     pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
-        self.nodes[descendant.0 as usize]
+        self.nodes[*descendant as usize]
             .as_ref()
             .unwrap()
-            .ancestors[ancestor.0 as usize]
+            .ancestors[*ancestor as usize]
     }
 }
 
 /// A list of tag ids. Uses SmallVec for compact storage of small lists.
-#[derive(Deref, DerefMut, Default, Clone)]
+#[derive(Deref, DerefMut, Clone)]
 pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
 
 impl<const N: usize> TagList<N> {
@@ -105,7 +105,7 @@ impl<const N: usize> TagList<N> {
     }
 
     pub fn none_match<const R: usize>(&self, tag: TagId, registry: &TagRegistry<R>) -> bool {
-        !self.iter().any(|existing| registry.is_match(*existing, tag))
+        !self.any_match(tag, registry)
     }
 
     pub fn none_match_from<const R: usize, const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry<R>) -> bool {
