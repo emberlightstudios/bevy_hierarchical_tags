@@ -42,7 +42,7 @@ fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
 
     assert!(abilities.any_matches(magic, &registry));
     assert!(abilities.all_matches(&abilities, &registry));
-    assert!(!abilities.any_matches(tags.attack, &registry));
+    assert!(abilities.no_matches(tags.attack, &registry));
 
     println!("SUCCESS");
 }
