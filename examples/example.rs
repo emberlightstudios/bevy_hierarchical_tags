@@ -23,9 +23,7 @@ fn main() {
     let attack = registry.register("Input.Attack");
 
     app.insert_resource(registry);
-    app.insert_resource(MyTagIds {
-        fireball, lightning, attack
-    });
+    app.insert_resource(MyTagIds {fireball, lightning, attack});
     app.run();
 }
 
@@ -43,14 +41,14 @@ fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
     assert!(!registry.is_match(tags.lightning, tags.fireball));
     assert!(!registry.is_match(tags.lightning, tags.attack));
 
-    let abilities: TagList<2> = TagList::from([tags.fireball, tags.lightning]);
+    let abilities_taglist: TagList<2> = TagList::from([tags.fireball, tags.lightning]);
     let magic_tags: TagList<2> = TagList::from([magic]);
     let input_tags: TagList<2> = TagList::from([tags.attack]);
 
-    assert!(abilities.any_match(magic, &registry));
-    assert!(abilities.all_match_from(&magic_tags, &registry));
-    assert!(abilities.none_match(tags.attack, &registry));
-    assert!(abilities.none_match_from(&input_tags, &registry));
+    assert!(abilities_taglist.any_match(magic, &registry));
+    assert!(abilities_taglist.all_match_from(&magic_tags, &registry));
+    assert!(abilities_taglist.none_match(tags.attack, &registry));
+    assert!(abilities_taglist.none_match_from(&input_tags, &registry));
 
     println!("SUCCESS");
 }
