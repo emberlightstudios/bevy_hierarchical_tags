@@ -67,7 +67,7 @@ impl TagRegistry {
             }
 
             let id = TagId(self.nodes.len() as u16);
-            if *id > self.max_tags as u16 {
+            if *id >= self.max_tags as u16 {
                 panic!("Cannot add more tags.  Increase max_tags parameter for TagRegistry");
             }
 
