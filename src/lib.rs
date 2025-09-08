@@ -1,15 +1,10 @@
 use bevy::prelude::*;
+use smallbitvec::SmallBitVec;
 use smallvec::SmallVec;
 use std::collections::HashMap;
 
-
 pub mod prelude {
-    pub use crate::{
-        TagPlugin,
-        TagRegistry,
-        TagId,
-        TagList,
-    };
+    pub use crate::{TagPlugin, TagRegistry, TagId, TagList};
 }
 
 pub struct TagPlugin;
@@ -21,12 +16,12 @@ impl Plugin for TagPlugin {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Deref)]
-pub struct TagId(u16);
+pub struct TagId(pub u16);
 
 pub struct TagNode {
-    //id: TagId,
-    //name: String,
     parent: Option<TagId>,
+    /// Bitmask of all ancestors (including itself)
+    ancestors: SmallBitVec,
 }
 
 #[derive(Resource, Default)]
@@ -42,7 +37,6 @@ impl TagRegistry {
         }
 
         let path = path.to_lowercase();
-        // Split "Ability.Magic.Fire" into ["Ability", "Magic", "Fire"]
         let parts: Vec<&str> = path.split('.').collect();
         let mut parent: Option<TagId> = None;
         let mut current_path = String::new();
@@ -53,20 +47,27 @@ impl TagRegistry {
             }
             current_path.push_str(part);
 
-            // Already exists?
             if let Some(&id) = self.lookup.get(&current_path) {
                 parent = Some(id);
                 continue;
             }
 
-            // Insert new node
+            // assign new id
             let id = TagId(self.nodes.len() as u16);
-            self.nodes.push(TagNode {
-                //id,
-                //name: part.to_string(),
-                parent,
-            });
 
+            // build ancestor mask
+            let mut ancestors = SmallBitVec::from_elem(1024, false);
+            ancestors.set(id.0 as usize, true); // mark itself
+            if let Some(p) = parent {
+                let parent_anc = &self.nodes[p.0 as usize].ancestors;
+                for (i, bit) in parent_anc.iter().enumerate() {
+                    if bit {
+                        ancestors.set(i, true);
+                    }
+                }
+            }
+
+            self.nodes.push(TagNode { parent, ancestors });
             self.lookup.insert(current_path.clone(), id);
             parent = Some(id);
         }
@@ -78,28 +79,19 @@ impl TagRegistry {
         self.lookup.get(&tag.to_lowercase()).copied()
     }
 
-    pub fn matches(&self, descendent: TagId, ancestor: TagId) -> bool {
-        let mut current = Some(descendent);
-        while let Some(id) = current {
-            if id == ancestor {
-                return true;
-            }
-            current = self.nodes[id.0 as usize].parent;
-        }
-        false
+    pub fn matches(&self, descendant: TagId, ancestor: TagId) -> bool {
+        self.nodes[descendant.0 as usize].ancestors[ancestor.0 as usize]
     }
 }
 
-/// Generic over inline stack size for smallvec.  You can exceed this, but it will
-/// involve heap allocations.  Try to match with the number of tags you would 
-/// expect for your use case.
+/// A list of tag ids. Uses SmallVec for compact storage of small lists.
 #[derive(Deref, DerefMut, Default, Clone)]
 pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
 
-#[allow(dead_code)]
 impl<const N: usize> TagList<N> {
     pub fn any_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
-        self.iter().any(|existing| registry.matches(*existing, tag))
+        self.iter()
+            .any(|existing| registry.matches(*existing, tag))
     }
 
     pub fn all_matches<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
