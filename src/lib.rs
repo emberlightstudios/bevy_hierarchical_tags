@@ -68,7 +68,7 @@ impl TagRegistry {
         self.lookup.get(&tag.as_ref().to_lowercase()).copied()
     }
 
-    pub fn matches(&self, descendant: TagId, ancestor: TagId) -> bool {
+    pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
         self.nodes[descendant.0 as usize].ancestors[ancestor.0 as usize]
     }
 }
@@ -78,16 +78,16 @@ impl TagRegistry {
 pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
 
 impl<const N: usize> TagList<N> {
-    pub fn any_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
-        self.iter().any(|existing| registry.matches(*existing, tag))
+    pub fn any_match(&self, tag: TagId, registry: &TagRegistry) -> bool {
+        self.iter().any(|existing| registry.is_match(*existing, tag))
     }
 
-    pub fn none_matches(&self, tag: TagId, registry: &TagRegistry) -> bool {
-        !self.iter().any(|existing| registry.matches(*existing, tag))
+    pub fn none_match(&self, tag: TagId, registry: &TagRegistry) -> bool {
+        !self.iter().any(|existing| registry.is_match(*existing, tag))
     }
 
-    pub fn all_matches<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
-        tags.iter().all(|tag| self.any_matches(*tag, registry))
+    pub fn all_match<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+        tags.iter().all(|tag| self.any_match(*tag, registry))
     }
 
     pub fn from_slice(slice: &[TagId]) -> Self {

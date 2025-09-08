@@ -31,18 +31,18 @@ fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
     let magic = registry.id_of("Ability.Magic").unwrap();
     let abilities = registry.id_of("Ability").unwrap();
 
-    assert!(registry.matches(tags.fireball, magic));
-    assert!(registry.matches(tags.lightning, magic));
-    assert!(registry.matches(tags.fireball, abilities));
-    assert!(registry.matches(tags.lightning, abilities));
-    assert!(!registry.matches(tags.lightning, tags.fireball));
-    assert!(!registry.matches(tags.lightning, tags.attack));
+    assert!(registry.is_match(tags.fireball, magic));
+    assert!(registry.is_match(tags.lightning, magic));
+    assert!(registry.is_match(tags.fireball, abilities));
+    assert!(registry.is_match(tags.lightning, abilities));
+    assert!(!registry.is_match(tags.lightning, tags.fireball));
+    assert!(!registry.is_match(tags.lightning, tags.attack));
 
     let abilities = TagList::<2>::from_slice(&[tags.fireball, tags.lightning]);
 
-    assert!(abilities.any_matches(magic, &registry));
-    assert!(abilities.all_matches(&abilities, &registry));
-    assert!(abilities.none_matches(tags.attack, &registry));
+    assert!(abilities.any_match(magic, &registry));
+    assert!(abilities.all_match(&abilities, &registry));
+    assert!(abilities.none_match(tags.attack, &registry));
 
     println!("SUCCESS");
 }
