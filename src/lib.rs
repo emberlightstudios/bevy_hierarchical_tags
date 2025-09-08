@@ -30,7 +30,8 @@ pub struct TagRegistry {
 }
 
 impl TagRegistry {
-    pub fn register(&mut self, path: &str) -> TagId {
+    pub fn register(&mut self, path: impl AsRef<str>) -> TagId {
+        let path = path.as_ref();
         if let Some(&id) = self.lookup.get(path) {
             return id;
         }
@@ -74,8 +75,8 @@ impl TagRegistry {
         parent.unwrap()
     }
 
-    pub fn id_of(&self, tag: &str) -> Option<TagId> {
-        self.lookup.get(&tag.to_lowercase()).copied()
+    pub fn id_of(&self, tag: impl AsRef<str>) -> Option<TagId> {
+        self.lookup.get(&tag.as_ref().to_lowercase()).copied()
     }
 
     pub fn matches(&self, descendant: TagId, ancestor: TagId) -> bool {
