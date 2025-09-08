@@ -42,6 +42,7 @@ fn test(registry: Res<MyTagRegistry>, tags: Res<MyTagIds>) {
     assert!(!registry.is_match(tags.lightning, tags.fireball));
     assert!(!registry.is_match(tags.lightning, tags.attack));
 
+    // 2 slots wil be allocated inline.  Any extras go on the heap.
     let abilities_taglist: TagList<2> = TagList::from([tags.fireball, tags.lightning]);
     let magic_tags: TagList<2> = TagList::from([magic]);
     let input_tags: TagList<2> = TagList::from([tags.attack]);
