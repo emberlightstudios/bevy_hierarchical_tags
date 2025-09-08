@@ -90,7 +90,7 @@ impl<const N: usize> TagList<N> {
         tags.iter().all(|tag| !self.any_match(*tag, registry))
     }
 
-    pub fn all_match<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+    pub fn all_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
         tags.iter().all(|tag| self.any_match(*tag, registry))
     }
 }

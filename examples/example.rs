@@ -43,7 +43,7 @@ fn test(registry: Res<TagRegistry>, tags: Res<MyTagIds>) {
     let input_tags: TagList<2> = TagList::from([tags.attack]);
 
     assert!(abilities.any_match(magic, &registry));
-    assert!(abilities.all_match(&magic_tags, &registry));
+    assert!(abilities.all_match_from(&magic_tags, &registry));
     assert!(abilities.none_match(tags.attack, &registry));
     assert!(abilities.none_match_from(&input_tags, &registry));
 
