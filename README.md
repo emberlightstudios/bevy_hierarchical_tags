@@ -1,4 +1,4 @@
-# Rust Hierarchical Tags
+# Bevy Hierarchical Tags
 
 This simple crate implements a hierarchical tag system for the bevy game engine.  It is very easy to use.  It provides a TagRegistry Resource and some simple apis for querying against it.  See example.
 
