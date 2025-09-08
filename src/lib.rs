@@ -19,7 +19,6 @@ impl Plugin for TagPlugin {
 pub struct TagId(pub u16);
 
 pub struct TagNode {
-    parent: Option<TagId>,
     /// Bitmask of all ancestors (including itself)
     ancestors: SmallBitVec,
 }
@@ -67,7 +66,7 @@ impl TagRegistry {
                 }
             }
 
-            self.nodes.push(TagNode { parent, ancestors });
+            self.nodes.push(TagNode { ancestors });
             self.lookup.insert(current_path.clone(), id);
             parent = Some(id);
         }
