@@ -18,7 +18,7 @@ pub struct TagNode {
 }
 
 /// Tag registry with a fixed inline array
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct TagRegistry<const TAGMAX: usize> {
     nodes: [Option<TagNode>; TAGMAX],
     lookup: HashMap<String, TagId>,
@@ -98,7 +98,7 @@ impl<const TAGMAX: usize> TagRegistry<TAGMAX> {
 }
 
 /// A list of tag ids. Uses SmallVec for compact storage of small lists.
-#[derive(Deref, DerefMut, Clone)]
+#[derive(Deref, DerefMut, Clone, Default)]
 pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
 
 impl<const N: usize> TagList<N> {
