@@ -2,6 +2,6 @@
 
 This simple crate implements a hierarchical tag system for the bevy game engine.  It is very easy to use.  It provides a TagRegistry Resource and some simple apis for querying against it.  See example.
 
-It uses Bitvec to store a bitmask for each tag node for fastest tag matching.  This does come at the cost of ram, but should by much faster until you hit an unreasonably large number of tags.
+I am no longer using bitvec to store bitmasks for tag matching because it is heap allocated.  Now each TagNode gets an inline array of u64 to store custom bitmasks.  This should lead to better performance via fewer indirections.
 
-There is a const generic to determine the max number of tags the resource can support.  I recommend using a type alias for this so you don't have to track it all over the place, as I did in the example.
+The number of tags is no longer generic.  By default you can have up to 512 tags.  There is a feature flag to take this to 1024 if needed.
