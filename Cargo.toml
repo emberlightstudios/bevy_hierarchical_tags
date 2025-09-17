@@ -6,4 +6,8 @@ edition = "2024"
 [dependencies]
 bevy = { workspace = true }
 smallvec = { workspace = true }
-bitvec = "1.0.1"
+
+
+[features]
+default = []
+tagmax_1024 = []
