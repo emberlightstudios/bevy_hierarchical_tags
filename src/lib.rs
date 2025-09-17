@@ -115,10 +115,48 @@ impl TagRegistry {
     }
 
     /// Check if descendant has ancestor in its mask
+    #[inline(always)]
     pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
         self.nodes[*descendant as usize]
             .unwrap()
             .get_bit(*ancestor as usize)
+    }
+
+    /// Returns true if `tag` matches *any* tag in `list`
+    pub fn any_match<const N: usize>(&self, list: &TagList<N>, tag: TagId) -> bool {
+        list.iter().any(|&existing| self.is_match(existing, tag))
+    }
+
+    /// Returns true if `tag` matches *none* of the tags in `list`
+    pub fn none_match<const N: usize>(&self, list: &TagList<N>, tag: TagId) -> bool {
+        !self.any_match(list, tag)
+    }
+
+    /// Returns true if *any* tag in `tags` matches any tag in `list`
+    pub fn any_match_from<const N: usize, const M: usize>(
+        &self,
+        list: &TagList<N>,
+        tags: &TagList<M>,
+    ) -> bool {
+        tags.iter().any(|&tag| self.any_match(list, tag))
+    }
+
+    /// Returns true if *none* of the tags in `tags` match any tag in `list`
+    pub fn none_match_from<const N: usize, const M: usize>(
+        &self,
+        list: &TagList<N>,
+        tags: &TagList<M>,
+    ) -> bool {
+        !self.any_match_from(list, tags)
+    }
+
+    /// Returns true if *all* tags in `tags` match some tag in `list`
+    pub fn all_match_from<const N: usize, const M: usize>(
+        &self,
+        list: &TagList<N>,
+        tags: &TagList<M>,
+    ) -> bool {
+        tags.iter().all(|&tag| self.any_match(list, tag))
     }
 }
 
@@ -128,23 +166,23 @@ pub struct TagList<const N: usize>(SmallVec<[TagId; N]>);
 
 impl<const N: usize> TagList<N> {
     pub fn any_match(&self, tag: TagId, registry: &TagRegistry) -> bool {
-        self.iter().any(|existing| registry.is_match(*existing, tag))
+        registry.any_match(self, tag)
     }
 
     pub fn none_match(&self, tag: TagId, registry: &TagRegistry) -> bool {
-        !self.any_match(tag, registry)
+        registry.none_match(self, tag)
     }
 
     pub fn any_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
-        tags.iter().any(|tag| self.any_match(*tag, registry))
+        registry.any_match_from(self, tags)
     }
 
     pub fn none_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
-        tags.iter().all(|tag| !self.any_match(*tag, registry))
+        registry.none_match_from(self, tags)
     }
 
     pub fn all_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
-        tags.iter().all(|tag| self.any_match(*tag, registry))
+        registry.all_match_from(self, tags)
     }
 }
 
