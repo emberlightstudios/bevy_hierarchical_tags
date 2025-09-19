@@ -19,8 +19,13 @@ const NUM_WORDS: usize = (MAX_TAGS + 63) / 64;
 
 /// Tag identifier
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Deref)]
-pub struct TagId(pub u16);
+pub struct TagId(u16);
 
+impl From<u16> for TagId {
+    fn from(value: u16) -> Self {
+        TagId(value)
+    }
+}
 
 /// Node representing a tag and its ancestors
 #[derive(Clone, Copy, Debug)]
