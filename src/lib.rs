@@ -14,7 +14,7 @@ pub const MAX_TAGS: usize = 512;
 #[cfg(feature = "tagmax_1024")]
 pub const MAX_TAGS: usize = 1024;
 
-const NUM_WORDS: usize = (MAX_TAGS + 63) / 64;
+const NUM_WORDS: usize = (MAX_TAGS + 63).div_ceil(64);
 
 /// Tag identifier
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Deref)]
@@ -162,6 +162,12 @@ impl TagRegistry {
         tags: &TagList<M>,
     ) -> bool {
         tags.iter().all(|&tag| self.any_match(list, tag))
+    }
+}
+
+impl Default for TagRegistry {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
