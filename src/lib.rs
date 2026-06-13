@@ -3,7 +3,7 @@ use smallvec::SmallVec;
 use std::collections::HashMap;
 
 pub mod prelude {
-    pub use crate::{TagId, TagRegistry, TagList};
+    pub use crate::{TagId, TagList, TagRegistry};
 }
 
 /// Default maximum number of tags (512)
@@ -16,13 +16,12 @@ pub const MAX_TAGS: usize = 1024;
 
 const NUM_WORDS: usize = (MAX_TAGS + 63) / 64;
 
-
 /// Tag identifier
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Deref)]
 pub struct TagId(u16);
 
-impl From<u16> for TagId {
-    fn from(value: u16) -> Self {
+impl TagId {
+    pub const fn from_raw(value: u16) -> Self {
         TagId(value)
     }
 }
@@ -31,31 +30,33 @@ impl From<u16> for TagId {
 #[derive(Clone, Copy, Debug)]
 pub struct TagNode {
     // Each bit represents an ancestor; TAGMAX bits max
-    ancestors: [u64; NUM_WORDS],
+    bitmask: [u64; NUM_WORDS],
 }
 
 impl TagNode {
     fn empty() -> Self {
-        Self { ancestors: [0; NUM_WORDS] }
+        Self {
+            bitmask: [0; NUM_WORDS],
+        }
     }
 
     fn set_bit(&mut self, idx: usize) {
         let word = idx / 64;
         let bit = idx % 64;
-        self.ancestors[word] |= 1 << bit;
+        self.bitmask[word] |= 1 << bit;
     }
 
     fn get_bit(&self, idx: usize) -> bool {
         let word = idx / 64;
         let bit = idx % 64;
-        (self.ancestors[word] & (1 << bit)) != 0
+        (self.bitmask[word] & (1 << bit)) != 0
     }
 }
 
-/// Tag registry with fixed inline storage
+/// Tag registry
 #[derive(Resource, Clone)]
 pub struct TagRegistry {
-    nodes: [Option<TagNode>; MAX_TAGS],
+    nodes: Vec<Option<TagNode>>,
     lookup: HashMap<String, TagId>,
     len: usize, // number of tags currently registered
 }
@@ -63,7 +64,7 @@ pub struct TagRegistry {
 impl TagRegistry {
     pub fn new() -> Self {
         Self {
-            nodes: std::array::from_fn(|_| None),
+            nodes: vec![None; MAX_TAGS],
             lookup: HashMap::new(),
             len: 0,
         }
@@ -98,14 +99,14 @@ impl TagRegistry {
             let id = TagId(self.len as u16);
 
             // Build ancestor mask
-            let mut ancestors = if let Some(p) = parent {
-                self.nodes[*p as usize].unwrap()
+            let mut bitmask_node = if let Some(p) = parent {
+                self.nodes[*p as usize].expect("register: parent TagId was never registered")
             } else {
                 TagNode::empty()
             };
-            ancestors.set_bit(*id as usize);
+            bitmask_node.set_bit(*id as usize);
 
-            self.nodes[self.len] = Some(ancestors);
+            self.nodes[self.len] = Some(bitmask_node);
             self.lookup.insert(current_path.clone(), id);
             self.len += 1;
             parent = Some(id);
@@ -119,12 +120,11 @@ impl TagRegistry {
         self.lookup.get(&tag.as_ref().to_lowercase()).copied()
     }
 
-    /// Check if descendant has ancestor in its mask
-    #[inline(always)]
+    /// Check if descendant has ancestor in its mask.
     pub fn is_match(&self, descendant: TagId, ancestor: TagId) -> bool {
-        self.nodes[*descendant as usize]
-            .unwrap()
-            .get_bit(*ancestor as usize)
+        let node = self.nodes[*descendant as usize]
+            .expect("is_match: descendant TagId was never registered");
+        node.get_bit(*ancestor as usize)
     }
 
     /// Returns true if `tag` matches *any* tag in `list`
@@ -178,15 +178,27 @@ impl<const N: usize> TagList<N> {
         registry.none_match(self, tag)
     }
 
-    pub fn any_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+    pub fn any_match_from<const M: usize>(
+        &self,
+        tags: &TagList<M>,
+        registry: &TagRegistry,
+    ) -> bool {
         registry.any_match_from(self, tags)
     }
 
-    pub fn none_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+    pub fn none_match_from<const M: usize>(
+        &self,
+        tags: &TagList<M>,
+        registry: &TagRegistry,
+    ) -> bool {
         registry.none_match_from(self, tags)
     }
 
-    pub fn all_match_from<const M: usize>(&self, tags: &TagList<M>, registry: &TagRegistry) -> bool {
+    pub fn all_match_from<const M: usize>(
+        &self,
+        tags: &TagList<M>,
+        registry: &TagRegistry,
+    ) -> bool {
         registry.all_match_from(self, tags)
     }
 }
@@ -196,5 +208,41 @@ impl<const N: usize, I: IntoIterator<Item = TagId>> From<I> for TagList<N> {
         let mut list = SmallVec::new();
         list.extend(iter);
         TagList(list)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hierarchical_tag_matching() {
+        let mut registry = TagRegistry::new();
+
+        let fireball = registry.register("Ability.Magic.Fireball");
+        let lightning = registry.register("Ability.Magic.Lightning");
+        let attack = registry.register("Input.Attack");
+
+        let magic = registry.id_of("Ability.Magic").unwrap();
+        let abilities = registry.id_of("Ability").unwrap();
+
+        assert!(registry.is_match(fireball, magic));
+        assert!(registry.is_match(lightning, magic));
+        assert!(registry.is_match(fireball, abilities));
+        assert!(registry.is_match(lightning, abilities));
+        assert!(!registry.is_match(lightning, fireball));
+        assert!(!registry.is_match(lightning, attack));
+
+        let abilities_taglist: TagList<2> = TagList::from([fireball, lightning]);
+
+        assert!(abilities_taglist.any_match(magic, &registry));
+        assert!(abilities_taglist.none_match(attack, &registry));
+
+        let magic_tags: TagList<2> = TagList::from([magic]);
+        let input_tags: TagList<2> = TagList::from([attack]);
+
+        assert!(abilities_taglist.none_match_from(&input_tags, &registry));
+        assert!(abilities_taglist.all_match_from(&magic_tags, &registry));
+        assert!(abilities_taglist.any_match_from(&magic_tags, &registry));
     }
 }
